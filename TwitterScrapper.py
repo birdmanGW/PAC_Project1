@@ -64,8 +64,8 @@ def buildTwitterTree(node):
 		#wait counter to circumvent tweepy user rate limit
 		#every 3 values in waitlist, wait 15 minutes
 		if len(waitlist) % 3 == 0:
-			print "waiting 15 minutes ZZzz...."
-			time.sleep(900)
+			print "waiting 10 minutes ZZzz...."
+			time.sleep(600)
 		#make friend node
 		friend = makeNode(friendID)
 		#add friend as child
@@ -78,8 +78,8 @@ def buildTwitterTree(node):
 		print "Waitlist.length: %d" % len(waitlist)
 
 	#if waitlist.length over 1000 values
-	if waitlist.length > 1000:
-		return findRoot(node)
+	if waitlist.length > 2000:
+		return node.findRoot(node)
 
 	#pop first node from waitlist: friends found and added to tree
 	waitlist.pop(1)
@@ -123,4 +123,6 @@ print "Waitlist.length: %d" % len(waitlist)
 
 #start recursivly building tree
 Tree = buildTwitterTree(root);
+
+#Tree is root of node at the end of constructing tree
 
