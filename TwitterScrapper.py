@@ -1,18 +1,19 @@
 import tweepy #https://github.com/tweepy/tweepy
 import time
 import collections
+import networkx as nx
 
 class Node:
 #Class to create and form nodes: storing user_id, screen_name, and user_name
-	def __init__(self, user_id, screen_name, user_name, parent):
+	def __init__(self, user_id, screen_name, user_name):
 		self.user_id = user_id
 		self.screen_name = screen_name
 		self.user_name = user_name
-		self.parent = parent
-		self.children = []
+		#self.parent = parent
+		#self.children = []
 
-	def add_child(self, child):
-		self.children.append(child)
+	#def add_child(self, child):
+		#self.children.append(child)
 
 	def isLeaf(self):
 		return len(self.children) == 0
@@ -34,7 +35,7 @@ def makeNode(userID):
 	#get name
 	user_name = str(getuser.name)
 	#create node in tree
-	node = Node(user_id, screen_name, user_name, None)
+	node = Node(user_id, screen_name, user_name)
 	#return node
 	'''
 	print "The user's name is:  ", user_name
@@ -44,20 +45,113 @@ def makeNode(userID):
 	'''
 	return node
 
+def __find_k_cliques(G, k):
+    rcl = nx.find_cliques_recursive(G)
+    k_cliques_list = []
+    while True:
+        edge_list = []
+        try:
+            clique_list = next(rcl)
+            if len(clique_list) != k:
+                continue
+
+            else:
+                for i in range(len(clique_list)):
+                    for j in range(i+1, len(clique_list)):
+                        edge_list.append(G.has_edge(clique_list[i], clique_list[j]))
+                        edge_list.append(G.has_edge(clique_list[j], clique_list[i]))
+
+                if all( has_edge is True for has_edge in edge_list):
+                    k_cliques_list.append(clique_list)
+
+        except StopIteration:
+            break
+
+    if len(k_cliques_list) == 0:
+        return None
+
+    else:
+        return k_cliques_list
+
+def __calc_node_cnc(G_undirected, target_node, k_clique):
+    sum_cnc = 0
+
+    for node in k_clique:
+        if target_node != node:
+           sum_cnc += len(sorted(nx.common_neighbors(G_undirected, target_node, node))) - len(k_clique) + 2
+
+    return float(sum_cnc)
+
+
+
+def find_k_clique_seed(lgraph, rgraph, k, e):
+
+    """Compute the k-clique seed selection
+
+    This function is implemented based on NetworkX, please install it first!!!
+
+    Args:
+        lgraph is the left graph generated using NetworkX
+        rgraph is the right graph generated using NetworkX
+
+        k is the number of k-clique
+
+        e is the threshold (epsilon)
+
+    Returns:
+        The list of mappings of seeds
+    """
+
+    lgraph_k_clqs = __find_k_cliques(lgraph, k)
+    rgraph_k_clqs = __find_k_cliques(rgraph, k)
+
+    lgraph_undirected = lgraph.to_undirected()
+    rgraph_undirected = rgraph.to_undirected()
+
+    ## mapping from lgraph to rgraph
+    seed_mapping = dict()
+    seed_mappings = []
+
+    if lgraph_k_clqs is not None and rgraph_k_clqs is not None:
+        for lgraph_k_clq in lgraph_k_clqs:
+            for rgraph_k_clq in rgraph_k_clqs:
+                for lnode in lgraph_k_clq:
+                    for rnode in rgraph_k_clq:
+                        lnode_cnc = __calc_node_cnc(lgraph_undirected, lnode, lgraph_k_clq)
+                        rnode_cnc = __calc_node_cnc(rgraph_undirected, rnode, rgraph_k_clq)
+                        lnode_degree = float(G.degree(lnode))
+                        rnode_degree = float(G.degree(rnode))
+
+                        if (1-e <= (lnode_cnc/rnode_cnc) <= 1+e) and \
+                            (1-e <= (lnode_degree/rnode_degree) <= 1+e):
+                            seed_mapping[lnode] = rnode
+
+                if len(seed_mapping) == k:
+                    seed_mappings.append(copy.copy(seed_mapping))
+                    seed_mapping.clear()
+                    rgraph_k_clqs.remove(rgraph_k_clq)
+                    lgraph_k_clqs.remove(lgraph_k_clq)
+                    break
+
+        return seed_mappings
+
+    else:
+        print 'No k-cliques have been found'
+
 
 
 #id/user_id/screen_name
-def buildTwitterTree(node):
+def buildTwitterTree(G, root):
 	#try and get users friends list
 	try:
-		friendList = api.friends_ids(node.user_id)
+		friendList = api.friends_ids(root.user_id)
 	#exception when aunauthorized tweets enabled
 	except tweepy.TweepError:
 		print("Failed to run the command on that user, Skipping...")
 		#pop first node from waitlist: friends found and added to tree
 		waitlist.pop(1)
 		#recursively call function
-		buildTwitterTree(waitlist[1])
+		buildTwitterTree(G, waitlist[1])
 
 	#iterate through friends list, add to children of node
 	for friendID in friendList:
@@ -69,23 +163,25 @@ def buildTwitterTree(node):
 		#make friend node
 		friend = makeNode(friendID)
 		#add friend as child
-		node.add_child(friend)
+		#node.add_child(friend)
 		#make node friends parent
-		friend.parent = node
+		#friend.parent = node
 		#Add friend to waitlist
 		waitlist.append(friend)
+		G.add_node(friend)
+		G.add_edge(root, friend)
 		#debug
 		print "Waitlist.length: %d" % len(waitlist)
 
 	#if waitlist.length over 1000 values
 	if waitlist.length > 2000:
-		return node.findRoot(node)
+		return 
 
 	#pop first node from waitlist: friends found and added to tree
 	waitlist.pop(1)
 
 	#recursively call function
-	buildTwitterTree(waitlist[1])
+	buildTwitterTree(G, waitlist[1])
 
 
 def breadth_first_search(graph, root): 
@@ -121,8 +217,12 @@ waitlist.append(root);
 #debug
 print "Waitlist.length: %d" % len(waitlist)
 
+G = nx.DiGraph()
+G.add_node(root)
+buildTwitterTree(G, root)
+
 #start recursivly building tree
-Tree = buildTwitterTree(root);
+#Tree = buildTwitterTree(root);
 
 #Tree is root of node at the end of constructing tree
 
