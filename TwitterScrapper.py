@@ -5,6 +5,7 @@ import networkx as nx
 from networkx.readwrite import json_graph
 import json
 import sys
+import os
 
 class Node:
 #Class to create and form nodes: storing user_id, screen_name, and user_name
@@ -232,10 +233,8 @@ api = tweepy.API(auth)
 #Create waitlist of userid's
 waitlist = []
 
-#define root user_id
-root_id = ""
 #make root
-root = makeNode(root_id)
+root = api.get_user(sys.argv[1]).id
 #First add root to waitlist
 waitlist.append(root)
 
@@ -253,4 +252,4 @@ print("done")
 #Tree is root of node at the end of constructing tree
 
 # Export graph
-nx.write_yaml(G, "")
+nx.write_yaml(G, os.getcwd() + "/" + sys.argv[2])

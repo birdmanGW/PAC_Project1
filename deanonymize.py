@@ -2,6 +2,8 @@ import networkx as nx
 import networkx.drawing as drawing
 import matplotlib.pyplot as plt
 import numpy
+import sys
+import os
 
 from find_k_clique_seed import find_k_clique_seed
 
@@ -92,6 +94,7 @@ def match_scores(lgraph, rgraph, mapping, lnode):
 def eccentricity(items):
     max_value = max(items.iterkeys(), key=(lambda key: items[key]))
 
+    # TODO Fix
     without_max = dict(items)
     del without_max[0]
 
@@ -101,7 +104,7 @@ def eccentricity(items):
 
 
 if __name__ == "__main__":
-    G = nx.read_yaml("")
+    G = nx.read_yaml(os.getcwd() + "/" + sys.argv[1])
 
     mapping = find_k_clique_seed(G, G, 3, e=0.1)
     print(mapping)
