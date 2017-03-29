@@ -3,7 +3,6 @@ import time
 import collections
 import networkx as nx
 from networkx.readwrite import json_graph
-import json
 import sys
 import os
 
@@ -49,6 +48,19 @@ def makeNode(userID):
     # print "The user's friend list is:  ", friendList
 
     return node
+
+def node_data(userID):
+    data = {}
+    #get user basic profile
+    getuser = api.get_user(userID)
+    #get user id
+    data["user_id"] = getuser.id
+    #get user screen name(username)
+    data["screen_name"] = getuser.screen_name
+    #get name
+    data["user_name"] = (getuser.name).encode("ascii", "replace")
+
+    return data
 
 def __find_k_cliques(G, k):
     rcl = nx.find_cliques_recursive(G)
@@ -144,62 +156,52 @@ def find_k_clique_seed(lgraph, rgraph, k, e):
         print 'No k-cliques have been found'
 
 
+def buildTwitterTree(G, root, waitlist, f_l_count, count):
+    total = 10000
 
-#id/user_id/screen_name
-def buildTwitterTree(G, root):
-    global counter
-    global waitlist
-    counter += 1
-    if counter > 15:
+    f_l_count += 1
+    if f_l_count > 15:
         print "15 friend lists reached."
         print "waiting 15 minutes...."
         time.sleep(900)
-        counter = 1
+        f_l_count = 1
 
     #try and get users friends list
     try:
-        friendList = api.friends_ids(root.user_id)
+        friendList = api.friends_ids(root)
     #exception when aunauthorized tweets enabled
-    except tweepy.TweepError:
+    except tweepy.TweepError as e:
+        print(e)
         print("Failed to run the command on that user, Skipping...")
         print "waiting 15 minutes...."
         time.sleep(900)
         #pop first node from waitlist: friends found and added to tree
         waitlist.pop(0)
         #recursively call function
-        buildTwitterTree(G, waitlist[0])
+        buildTwitterTree(G, waitlist[0], waitlist, f_l_count, count)
+        return
 
     friend_num = 0
     #iterate through friends list, add to children of node
-    for friendID in friendList:
+    for friend in friendList:
         friend_num += 1
+        count += 1
+
+        if count % 100 == 0:
+            print(count)
+
         if friend_num > 50:
             break
 
-        #wait counter to circumvent tweepy user rate limit
-        #every n values in waitlist, wait 15 minutes
-        if len(waitlist) >= 2000:
+        if count >= total:
             return
 
-        #if len(waitlist) % 700 == 0:
-
-        #    print "waiting 15 minutes...."
-        #    time.sleep(900)
-        #make friend node
-        friend = makeNode(friendID)
-        #add friend as child
-        #node.add_child(friend)
-        #make node friends parent
-        #friend.parent = node
-        #Add friend to waitlist
         waitlist.append(friend)
         G.add_node(friend)
-        G.add_edge(root, friend)
-        #debug
-        # print "Waitlist.length: %d" % len(waitlist)
 
-    #if waitlist length over 1000 values
-    if len(waitlist) >= 2000:
+        G.add_edge(root, friend)
+
+    if count >= total:
         return
 
     #pop first node from waitlist: friends found and added to tree
@@ -207,7 +209,7 @@ def buildTwitterTree(G, root):
     waitlist.pop(0)
 
     #recursively call function
-    buildTwitterTree(G, waitlist[0])
+    buildTwitterTree(G, waitlist[0], waitlist, f_l_count, count)
 
 
 def breadth_first_search(graph, root):
@@ -239,17 +241,14 @@ root = api.get_user(sys.argv[1]).id
 waitlist.append(root)
 
 #debug
-print "Waitlist.length: %d" % len(waitlist)
+#print "Waitlist.length: %d" % len(waitlist)
 
 counter = 0
 G = nx.DiGraph()
 G.add_node(root)
-buildTwitterTree(G, root)
+buildTwitterTree(G, root, waitlist, 1, 1)
 print("done")
-#start recursivly building tree
-#Tree = buildTwitterTree(root);
 
-#Tree is root of node at the end of constructing tree
 
 # Export graph
 nx.write_yaml(G, os.getcwd() + "/" + sys.argv[2])
