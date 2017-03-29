@@ -92,15 +92,10 @@ def match_scores(lgraph, rgraph, mapping, lnode):
 
 
 def eccentricity(items):
-    max_value = max(items.iterkeys(), key=(lambda key: items[key]))
+    iv = items.values()
+    without_max = list(iv).remove(max(iv))
 
-    # TODO Fix
-    without_max = dict(items)
-    del without_max[0]
-
-    return (
-        (max(items) - max(items.remove(max(items)))) /
-        numpy.std(items, ddof=1))
+    return ((max(iv) - max(without_max)) / numpy.std(iv, ddof=1))
 
 
 if __name__ == "__main__":
