@@ -8,28 +8,6 @@ import os
 
 from find_k_clique_seed import find_k_clique_seed
 
-class Node:
-#Class to create and form nodes: storing user_id, screen_name, and user_name
-    def __init__(self, user_id, screen_name, user_name):
-        self.user_id = user_id
-        self.screen_name = screen_name
-        self.user_name = user_name
-        #self.parent = parent
-        #self.children = []
-
-    #def add_child(self, child):
-        #self.children.append(child)
-
-    def isLeaf(self):
-        return len(self.children) == 0
-
-    def findRoot(node):
-        p = node
-        while p.parent != None:
-            p = p.parent
-        return p
-
-
 def invert_mapping(mapping):
     return {v: k for k, v in mapping.iteritems()}
 

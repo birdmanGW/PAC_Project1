@@ -100,32 +100,3 @@ def find_k_clique_seed(lgraph, rgraph, k, e):
 
     else:
         print 'No k-cliques have been found'
-
-
-
-'''An Example of how to use the function'''
-if __name__ == '__main__':
-    G = nx.DiGraph()
-    G.add_node(1)
-    G.add_node(2)
-    G.add_node(3)
-    G.add_node(4)
-    G.add_node(5)
-    G.add_node(6)
-
-    G.add_edge(1, 2)
-    G.add_edge(2, 1)
-    G.add_edge(1, 3)
-    G.add_edge(3, 1)
-    G.add_edge(2, 3)
-    G.add_edge(3, 2)
-
-    G.add_edge(2, 4)
-    G.add_edge(3, 4)
-    G.add_edge(2, 5)
-    G.add_edge(3, 5)
-
-    G.add_edge(1, 6)
-    G.add_edge(3, 6)
-
-    print find_k_clique_seed(lgraph=G, rgraph=G, k=3, e=0.1)

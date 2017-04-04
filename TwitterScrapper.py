@@ -6,62 +6,6 @@ from networkx.readwrite import json_graph
 import sys
 import os
 
-class Node:
-#Class to create and form nodes: storing user_id, screen_name, and user_name
-    def __init__(self, user_id, screen_name, user_name):
-        self.user_id = user_id
-        self.screen_name = screen_name
-        self.user_name = user_name
-        #self.parent = parent
-        #self.children = []
-
-    #def add_child(self, child):
-        #self.children.append(child)
-
-    def isLeaf(self):
-        return len(self.children) == 0
-
-    def findRoot(node):
-        p = node
-        while p.parent != None:
-            p = p.parent
-        return p
-
-
-def makeNode(userID):
-    #get user basic profile
-    getuser = api.get_user(userID)
-    #get user id
-    user_id = getuser.id
-    #get user screen name(username)
-    screen_name = getuser.screen_name
-    #get name
-    user_name = (getuser.name).encode("ascii", "replace")
-    #create node in tree
-    node = Node(user_id, screen_name, user_name)
-    #return node
-
-    print user_name
-    #print "The user's name is:  ", user_name
-    # print "The screenname(username) is:  ", screen_name
-    # print "The userID is:  ", user_id
-    # print "The user's friend list is:  ", friendList
-
-    return node
-
-def node_data(userID):
-    data = {}
-    #get user basic profile
-    getuser = api.get_user(userID)
-    #get user id
-    data["user_id"] = getuser.id
-    #get user screen name(username)
-    data["screen_name"] = getuser.screen_name
-    #get name
-    data["user_name"] = (getuser.name).encode("ascii", "replace")
-
-    return data
-
 def __find_k_cliques(G, k):
     rcl = nx.find_cliques_recursive(G)
     k_cliques_list = []
@@ -210,16 +154,6 @@ def buildTwitterTree(G, root, waitlist, f_l_count, count):
 
     #recursively call function
     buildTwitterTree(G, waitlist[0], waitlist, f_l_count, count)
-
-
-def breadth_first_search(graph, root):
-    visited, queue = set(), collections.deque([root])
-    while queue:
-        vertex = queue.popleft()
-        for neighbour in graph[vertex]:
-            if neighbour not in visited:
-                visited.add(neighbour)
-                queue.append(neighbour)
 
 #Twitter API credentials - ADD HERE
 consumer_key = ""
